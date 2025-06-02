@@ -37,7 +37,7 @@ for t in range(1, tiempo_total + 1):
     dT = (energia_neta * dt) / (masa * calor_especifico)
     T += dT
     tiempos.append(t)
-    temperaturas.append(T)
+    temperaturas.append(T) # type: ignore
     if T >= 100:
         break  # Alcanzamos 100°C
 
