@@ -4,18 +4,11 @@ en cada tick de tiempo. Con variables aleatorias: si el fenómeno tiene lugar, o
 de X grados, durante Y segundos. Variación máxima 50 grados en descenso.
 Rehacer el gráfico de temperaturas del TP 4.
 """
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict, Optional
 from utils.heat_simulation import HeatSimulationParameters, HeatSimulator
-from tps.tp4_familias import (
-    ejecutar_tp4_resistencias, ejecutar_tp4_temperaturas_iniciales, ejecutar_tp4_temperaturas_ambiente,
-    ejecutar_tp4_tensiones_12v, ejecutar_tp4_tensiones_220v, HeatPlotter
-)
+from tps import tp4_familias
 
 
 def ejecutar_tp5_evento_basico():
@@ -23,23 +16,23 @@ def ejecutar_tp5_evento_basico():
     print("=== TP5 - Simulación con Evento Estocástico Básico ===")
     print("Comparando simulación normal vs. con eventos estocásticos...")
     
-    # Parámetros del evento estocástico según la consigna
+    # Parámetros del evento estocástico - más suaves y realistas
     evento_params = {
         'probabilidad': 1/300,
-        'descenso_max': 50,  # Máximo descenso en grados
-        'duracion_min': 30,  # Duración mínima en segundos
-        'duracion_max': 120  # Duración máxima en segundos
+        'descenso_max': 3,   # Máximo descenso en grados - más suave
+        'duracion_min': 60,  # Duración mínima en segundos
+        'duracion_max': 180  # Duración máxima en segundos
     }
     
     # Simulación sin eventos estocásticos
     params = HeatSimulationParameters()
     simulator_normal = HeatSimulator(params)
-    tiempos_normal, temperaturas_normal = simulator_normal.simular()
+    tiempos_normal, temperaturas_normal = simulator_normal.simular(parar_en_100c=True)
     
     # Simulación con eventos estocásticos
     np.random.seed(42)  # Para reproducibilidad
     simulator_estocastico = HeatSimulator(params)
-    tiempos_estocastico, temperaturas_estocastico = simulator_estocastico.simular(evento_estocastico=evento_params)
+    tiempos_estocastico, temperaturas_estocastico = simulator_estocastico.simular(parar_en_100c=True, evento_estocastico=evento_params)
     
     # Crear gráfico comparativo
     fig = plt.figure(figsize=(12, 8))
@@ -75,6 +68,7 @@ def ejecutar_tp5_evento_basico():
         plt.xticks(np.arange(0, upper_limit, tick_spacing))
     plt.xlim(0, max_tiempo_min * 1.05)
     
+    plt.tight_layout()
     plt.show()
     
     # Mostrar estadísticas
@@ -87,6 +81,8 @@ def ejecutar_tp5_evento_basico():
     print(f"  - Temperatura final: {temperaturas_estocastico[-1]:.2f}°C")
     if hasattr(simulator_estocastico, 'eventos_estocasticos'):
         print(f"  - Eventos ocurridos: {len(simulator_estocastico.eventos_estocasticos)}")
+        for i, evento in enumerate(simulator_estocastico.eventos_estocasticos):
+            print(f"    Evento {i+1}: -{evento['descenso']:.1f}°C por {evento['duracion']}s en t={evento['tiempo']/60:.1f}min")
     
     return fig, (tiempos_normal, temperaturas_normal), (tiempos_estocastico, temperaturas_estocastico)
 
@@ -98,9 +94,9 @@ def ejecutar_tp5_multiples_simulaciones(n_simulaciones: int = 10):
     
     evento_params = {
         'probabilidad': 1/300,
-        'descenso_max': 50,
-        'duracion_min': 30,
-        'duracion_max': 120
+        'descenso_max': 3,   # Máximo descenso más suave
+        'duracion_min': 60,
+        'duracion_max': 180
     }
     
     params = HeatSimulationParameters()
@@ -108,13 +104,13 @@ def ejecutar_tp5_multiples_simulaciones(n_simulaciones: int = 10):
     
     # Simulación base sin eventos
     simulator_normal = HeatSimulator(params)
-    tiempos_normal, temperaturas_normal = simulator_normal.simular()
+    tiempos_normal, temperaturas_normal = simulator_normal.simular(parar_en_100c=True)
     
     # Múltiples simulaciones con eventos estocásticos
     for i in range(n_simulaciones):
         np.random.seed(42 + i)  # Diferentes semillas para variabilidad
         simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular(evento_estocastico=evento_params)
+        tiempos, temperaturas = simulator.simular(parar_en_100c=True, evento_estocastico=evento_params)
         simulaciones.append((tiempos, temperaturas, f"Simulación {i+1}"))
     
     # Crear gráfico
@@ -172,9 +168,9 @@ def ejecutar_tp5_tp4_con_eventos():
     # Parámetros del evento estocástico
     evento_params = {
         'probabilidad': 1/300,
-        'descenso_max': 50,
-        'duracion_min': 30,
-        'duracion_max': 120
+        'descenso_max': 3,   # Más suave
+        'duracion_min': 60,
+        'duracion_max': 180
     }
     
     # Menú para seleccionar qué TP4 rehacer con eventos
@@ -183,36 +179,30 @@ def ejecutar_tp5_tp4_con_eventos():
     print("2. Distribución normal de temperaturas iniciales")
     print("3. Distribución uniforme de temperaturas ambiente")
     print("4. Distribución normal de tensiones (12V)")
-    print("5. Distribución normal de tensiones (220V)")
     
     try:
-        opcion = input("Opción (1-5): ")
+        opcion = input("Opción (1-4): ")
         
         if opcion == "1":
             print("\nEjecutando distribución de resistencias con eventos estocásticos...")
             # Obtener simulaciones originales del TP4
-            _, simulaciones_originales = ejecutar_tp4_resistencias()
+            _, simulaciones_originales = tp4_familias.ejecutar_tp4_resistencias()
             titulo = "TP4.A + TP5: Resistencias con Eventos Estocásticos"
             
         elif opcion == "2":
             print("\nEjecutando temperaturas iniciales con eventos estocásticos...")
-            _, simulaciones_originales = ejecutar_tp4_temperaturas_iniciales()
+            _, simulaciones_originales = tp4_familias.ejecutar_tp4_temperaturas_iniciales()
             titulo = "TP4.B + TP5: Temperaturas Iniciales con Eventos Estocásticos"
             
         elif opcion == "3":
             print("\nEjecutando temperaturas ambiente con eventos estocásticos...")
-            _, simulaciones_originales = ejecutar_tp4_temperaturas_ambiente()
+            _, simulaciones_originales = tp4_familias.ejecutar_tp4_temperaturas_ambiente()
             titulo = "TP4.C + TP5: Temperaturas Ambiente con Eventos Estocásticos"
             
         elif opcion == "4":
             print("\nEjecutando tensiones 12V con eventos estocásticos...")
-            _, simulaciones_originales = ejecutar_tp4_tensiones_12v()
+            _, simulaciones_originales = tp4_familias.ejecutar_tp4_tensiones_12v()
             titulo = "TP4.D + TP5: Tensiones 12V con Eventos Estocásticos"
-            
-        elif opcion == "5":
-            print("\nEjecutando tensiones 220V con eventos estocásticos...")
-            _, simulaciones_originales = ejecutar_tp4_tensiones_220v()
-            titulo = "TP4.E + TP5: Tensiones 220V con Eventos Estocásticos"
             
         else:
             print("Opción no válida.")

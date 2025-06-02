@@ -8,13 +8,8 @@ del calentador de agua eléctrico según las especificaciones del curso.
 
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import os
 
-# Agregar path para utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-
-from heat_simulation import HeatSimulationParameters
+from utils.heat_simulation import HeatSimulationParameters
 
 
 def mostrar_parametros_diseño():
@@ -124,23 +119,41 @@ def calcular_tiempo_sin_perdidas():
 
 
 def graficar_temperatura_teorica():
-    """Grafica la curva de temperatura teórica sin pérdidas."""
+    """Grafica la curva de temperatura teórica sin pérdidas usando la misma simulación que otros TPs."""
     print("📈 GENERANDO GRÁFICO TEÓRICO (SIN PÉRDIDAS)...")
     
-    # Parámetros
-    masa = 1.0
-    c = 4186
-    delta_T = 80
-    potencia = 360
-    tiempo_total = (masa * c * delta_T) / potencia
+    # Usar la misma simulación que en TP2/TP3 para consistencia
+    from utils.heat_simulation import HeatSimulationParameters, HeatSimulator
     
-    # Datos para el gráfico
-    tiempos = np.arange(0, int(tiempo_total) + 1)
-    temperaturas = 20 + (potencia * tiempos) / (masa * c)
+    # Crear parámetros normales PERO simular sin pérdidas
+    params = HeatSimulationParameters(
+        masa=1.0,
+        potencia=360,
+        T_inicial=20,
+        T_amb=20,
+        tiempo_total=1200,  # 20 minutos
+    )
+    
+    # Simular SIN pérdidas térmicas (U = 0)
+    params_sin_perdidas = HeatSimulationParameters(
+        masa=params.masa,
+        potencia=params.potencia,
+        T_inicial=params.T_inicial,
+        T_amb=params.T_amb,
+        tiempo_total=params.tiempo_total,
+        k_acero=1e6,  # Conductividad muy alta = sin pérdidas
+        k_poliuretano=1e6,
+        espesor_acero=0.001,
+        espesor_poliuretano=0.001
+    )
+    
+    sim = HeatSimulator(params_sin_perdidas)
+    tiempos, temperaturas = sim.simular(parar_en_100c=True)
     
     # Crear gráfico
     plt.figure(figsize=(10, 6))
-    plt.plot(tiempos / 60.0, temperaturas, 'b-', linewidth=2, label="Temperatura teórica")
+    tiempos_min = np.array(tiempos) / 60.0
+    plt.plot(tiempos_min, temperaturas, 'b-', linewidth=2, label="Temperatura teórica")
     plt.axhline(100, color='r', linestyle='--', label="100°C (objetivo)")
     plt.axhline(20, color='g', linestyle=':', alpha=0.7, label="20°C (inicial)")
     
@@ -150,16 +163,28 @@ def graficar_temperatura_teorica():
     plt.grid(True, alpha=0.3)
     plt.legend()
     
-    # Anotar puntos importantes
-    plt.annotate(f'Tiempo total: {tiempo_total/60:.1f} min', 
-                xy=(tiempo_total/60, 100), xytext=(tiempo_total/60*0.7, 90),
-                arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
-                fontsize=10, ha='center')
+    # Encontrar el tiempo donde se alcanza 100°C
+    tiempo_100c = None
+    for i, temp in enumerate(temperaturas):
+        if temp >= 100:
+            tiempo_100c = tiempos_min[i]
+            break
+    
+    if tiempo_100c:
+        plt.annotate(f'Tiempo total: {tiempo_100c:.1f} min', 
+                    xy=(tiempo_100c, 100), xytext=(tiempo_100c*0.7, 90),
+                    arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
+                    fontsize=10, ha='center')
     
     plt.tight_layout()
     plt.show()
     
-    print(f"✅ Gráfico generado - Tiempo teórico: {tiempo_total/60:.1f} minutos")
+    if tiempo_100c:
+        print(f"✅ Gráfico generado - Tiempo para 100°C: {tiempo_100c:.1f} minutos")
+    else:
+        print(f"✅ Gráfico generado - Tiempo final: {tiempos_min[-1]:.1f} minutos")
+    
+    return tiempos, temperaturas
 
 
 def ejecutar_tp1():

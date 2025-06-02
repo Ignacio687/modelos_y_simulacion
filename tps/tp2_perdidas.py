@@ -11,14 +11,10 @@ Este módulo implementa:
 Autor: Ignacio Chaves (Legajo: 61.220)
 """
 
-import sys
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Agregar path para importar utilidades
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from heat_simulation import HeatSimulator, HeatSimulationParameters
+from utils.heat_simulation import HeatSimulator, HeatSimulationParameters
 
 # =============================================================================
 # PARÁMETROS DEL SISTEMA
@@ -103,7 +99,7 @@ def simular_sin_perdidas():
     print(f"Energía total requerida: {energia_total:.0f} J")
     print(f"Tiempo teórico: {tiempo_teorico:.1f} s ({tiempo_teorico/60:.1f} min)")
     
-    # Crear simulación sin pérdidas (U = 0)
+    # Crear simulación sin pérdidas (U = 0) - usar la misma que TP1
     params = HeatSimulationParameters(
         masa=MASA_AGUA,
         calor_especifico=CALOR_ESPECIFICO,
@@ -116,7 +112,10 @@ def simular_sin_perdidas():
     )
     
     sim = HeatSimulator(params)
-    tiempos, temperaturas = sim.simular()
+    tiempos, temperaturas = sim.simular(parar_en_100c=True)
+    
+    print(f"Tiempo real de simulación: {tiempos[-1]:.1f} s ({tiempos[-1]/60:.1f} min)")
+    print(f"Temperatura final alcanzada: {temperaturas[-1]:.1f}°C")
     
     return tiempos, temperaturas
 
@@ -142,7 +141,7 @@ def simular_con_perdidas():
     )
     
     sim = HeatSimulator(params)
-    tiempos, temperaturas = sim.simular()
+    tiempos, temperaturas = sim.simular(parar_en_100c=True)
     
     # Verificar si se alcanzó la temperatura objetivo
     if temperaturas[-1] < T_OBJETIVO:

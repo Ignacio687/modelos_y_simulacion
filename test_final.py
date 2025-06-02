@@ -28,7 +28,7 @@ def test_all_imports():
         from tps.tp4_familias import (
             ejecutar_tp4_resistencias, ejecutar_tp4_temperaturas_iniciales,
             ejecutar_tp4_temperaturas_ambiente, ejecutar_tp4_tensiones_12v,
-            ejecutar_tp4_tensiones_220v, mostrar_info_tp4
+            mostrar_info_tp4
         )
         print("✅ TP4 - OK")
         

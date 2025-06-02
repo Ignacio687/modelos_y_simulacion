@@ -1,102 +1,120 @@
-# Simulación de Calentamiento de Agua - Código Modularizado
+# Simulador de Calentador Eléctrico
 
-## Ignacio Chaves, legajo: 61.220
+**Autor:** Ignacio Chaves (Legajo: 61.220)  
+**Materia:** Modelos y Simulación - Universidad de Mendoza
 
-Este proyecto contiene simulaciones de calentamiento de agua con pérdidas térmicas, implementado de forma modular para facilitar la reutilización en los TPs 4 y 5.
+## Descripción
 
-## ✅ Estado del Proyecto: COMPLETADO
+Este repositorio contiene un simulador completo de calentador eléctrico desarrollado en Python que modela el comportamiento térmico de un sistema de calentamiento de agua. El proyecto implementa múltiples aspectos de la simulación física incluyendo transferencia de calor, pérdidas térmicas, efectos de cambio de fase (hielo), y eventos estocásticos.
 
-- ✅ Modularización completa del código original
-- ✅ TP4: Familias de curvas con distribuciones normales y uniformes 
-- ✅ TP5: Eventos estocásticos implementados
-- ✅ Compatibilidad 100% con código original verificada
-- ✅ Tests completos pasando
-- ✅ Documentación completa
+## Funcionalidades
+
+### TP1 - Diseño de Parámetros
+- Cálculo y optimización de parámetros del calentador (resistencia, potencia, geometría)
+- Selección de materiales y dimensiones del recipiente
+
+### TP2 - Pérdidas Térmicas
+- Simulación con pérdidas de calor al ambiente
+- Modelo físico completo de transferencia de calor con hielo (derretimiento, convección)
+
+### TP3 - Visualización Gráfica
+- Gráficos comparativos de temperatura vs tiempo
+- Escenarios: sin pérdidas, con pérdidas, y con efectos de hielo
+
+### TP4 - Análisis de Sensibilidad
+- Familias de curvas con distribuciones estadísticas de parámetros:
+  - Distribución uniforme de resistencias
+  - Distribución normal de temperaturas iniciales
+  - Distribución uniforme de temperaturas ambiente
+  - Distribución normal de tensiones (12V)
+
+### TP5 - Eventos Estocásticos
+- Simulación de perturbaciones aleatorias (descensos de temperatura)
+- Probabilidad de ocurrencia: 1/300 por tick de tiempo
+- Análisis comparativo con y sin eventos estocásticos
 
 ## Estructura del Proyecto
 
-### Archivos Principales Modulares
-
-- **`heat_simulation.py`**: Módulo principal con todas las clases y funciones reutilizables
-- **`tp4_parameter_families.py`**: Implementación del TP 4 (familias de curvas con distribuciones)
-- **`tp5_stochastic_events.py`**: Implementación del TP 5 (eventos estocásticos)
-- **`demo_completo.py`**: Demostración completa de todas las funcionalidades
-
-### Archivos de Prueba y Validación
-
-- **`test_modular.py`**: Tests con visualización gráfica
-- **`test_completo_no_graficos.py`**: Tests completos sin gráficos
-- **`compare_graphs_modular.py`**: Comparación usando código modular
-- **`heat_loss_graph_modular.py`**: Wrapper de compatibilidad
-
-### Archivos Originales (Mantenidos para Compatibilidad)
-
-- **`heat_graph.py`**: Simulación básica sin pérdidas de calor
-- **`heat_loss_graph.py`**: Simulación con pérdidas térmicas
-- **`heat_loss_with_ice_graph.py`**: Simulación con hielo (incompleta)
-- **`compare_graphs.py`**: Comparación de las tres simulaciones
-
-## Clases Principales
-
-### `HeatSimulationParameters`
-Almacena todos los parámetros de la simulación térmica.
-
-### `HeatSimulator`
-Ejecuta las simulaciones de calentamiento con soporte para eventos estocásticos.
-
-### `HeatPlotter`
-Genera gráficos de las simulaciones individuales y familias de curvas.
-
-### `ParameterDistribution`
-Genera distribuciones de parámetros para el TP4.
-
-## Uso Básico
-
-```python
-from heat_simulation import HeatSimulationParameters, HeatSimulator, HeatPlotter
-
-# Crear parámetros
-params = HeatSimulationParameters(potencia=500, T_inicial=15)
-
-# Ejecutar simulación
-simulator = HeatSimulator(params)
-tiempos, temperaturas = simulator.simular()
-
-# Graficar
-fig = HeatPlotter.plot_single_simulation(tiempos, temperaturas)
+```
+modelos_y_simulacion/
+├── main.py                 # Punto de entrada principal con menú interactivo
+├── tps/                    # Módulos de cada trabajo práctico
+│   ├── tp1_diseño.py
+│   ├── tp2_perdidas.py
+│   ├── tp2_hielo.py
+│   ├── tp3_graficos.py
+│   ├── tp4_familias.py
+│   └── tp5_estocasticos.py
+├── utils/                  # Utilitarios y simulador principal
+│   └── heat_simulation.py  # Clase HeatSimulator con toda la física
+└── tests/                  # Scripts de prueba y validación
 ```
 
-## Ejecutar Ejemplos
+## Instalación y Uso
+
+### Requisitos
+- Python 3.8+
+- numpy
+- matplotlib
+
+### Instalación
+```bash
+# Clonar el repositorio
+git clone <repo-url>
+cd modelos_y_simulacion
+
+# Crear entorno virtual (recomendado)
+python -m venv env
+source env/bin/activate  # Linux/macOS
+# o: env\Scripts\activate  # Windows
+
+# Instalar dependencias
+pip install -r requirements.txt
+```
+
+### Ejecución
+```bash
+# Ejecutar el menú principal interactivo
+python main.py
+
+# Ejecutar un TP específico directamente
+python -m tps.tp1_diseño
+python -m tps.tp2_perdidas
+# etc.
+```
+
+### Uso del Simulador
+
+El programa presenta un menú interactivo que permite:
+
+1. **Seleccionar un TP** (1-5)
+2. **Elegir una funcionalidad específica** dentro del TP
+3. **Ver gráficos y resultados** automáticamente
+
+Ejemplo de flujo:
+1. Ejecutar `python main.py`
+2. Seleccionar "3" para TP3 (Gráficos)
+3. Seleccionar "4" para comparación completa
+4. El programa generará y mostrará los gráficos comparativos
+
+## Características Técnicas
+
+- **Modelo físico realista**: Incluye conducción, convección, y cambios de fase
+- **Parámetros configurables**: Masa, potencia, geometría, materiales
+- **Visualización avanzada**: Gráficos interactivos con matplotlib
+- **Análisis estadístico**: Distribuciones normales y uniformes
+- **Eventos aleatorios**: Simulación Monte Carlo de perturbaciones
+
+## Testing
 
 ```bash
-# Verificar que todo funciona
-python test_completo_no_graficos.py  # Tests rápidos sin gráficos
-python test_modular.py               # Tests con visualización
+# Ejecutar todas las pruebas
+python test_final.py
 
-# Ejecutar TPs completos
-python tp4_parameter_families.py    # TP 4 completo
-python tp5_stochastic_events.py     # TP 5 completo
-python demo_completo.py             # Demostración completa
-
-# Ejemplos básicos
-python heat_simulation.py           # Ejemplo básico
-python heat_loss_graph_modular.py   # Compatibilidad con original
-python compare_graphs_modular.py    # Comparación modular
+# Pruebas específicas
+python tests/demo_completo.py
 ```
 
-## Verificación y Tests
+---
 
-Para verificar que el código funciona correctamente:
-
-```bash
-python test_completo_no_graficos.py
-```
-
-Este comando ejecutará todos los tests y verificará:
-- ✅ Simulación básica
-- ✅ Parámetros personalizados  
-- ✅ Eventos estocásticos
-- ✅ Distribuciones del TP4
-- ✅ Simulaciones del TP4
-- ✅ Simulaciones del TP5
-- ✅ Compatibilidad con código original
+*Desarrollado para el curso de Modelos y Simulación, implementando conceptos de transferencia de calor, análisis numérico, y simulación estocástica.*

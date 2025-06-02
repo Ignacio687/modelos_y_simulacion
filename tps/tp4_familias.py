@@ -1,10 +1,6 @@
 """
 TP 4: Generar familias de curvas con distribuciones normales y uniformes de parámetros iniciales
 """
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple
@@ -51,12 +47,15 @@ class HeatPlotter:
         """
         fig, ax = plt.subplots(figsize=(12, 8))
         
-        # Generar un color diferente para cada curva
-        colors = plt.cm.tab10(np.linspace(0, 1, len(simulaciones)))
+        # Generar un color diferente para cada curva usando colores predefinidos
+        colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
         
         for i, (tiempos, temperaturas, etiqueta) in enumerate(simulaciones):
-            ax.plot(tiempos, temperaturas, 
-                   color=colors[i], linewidth=2, 
+            # Convertir tiempos a minutos para el eje X
+            tiempos_min = np.array(tiempos) / 60.0
+            color = colors[i % len(colors)]  # Ciclar colores si hay más de 10 curvas
+            ax.plot(tiempos_min, temperaturas, 
+                   color=color, linewidth=2, 
                    label=etiqueta, alpha=0.8)
         
         ax.set_xlabel('Tiempo (minutos)', fontsize=12)
@@ -88,7 +87,7 @@ def ejecutar_tp4_resistencias():
         params.actualizar_potencia_desde_tension(params.tension)
         
         simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular()
+        tiempos, temperaturas = simulator.simular(parar_en_100c=True)
         
         etiqueta = f"R = {resistencia:.3f} Ω (P = {params.potencia:.0f} W)"
         simulaciones.append((tiempos, temperaturas, etiqueta))
@@ -115,10 +114,10 @@ def ejecutar_tp4_temperaturas_iniciales():
     
     for i, temp_inicial in enumerate(temps_iniciales):
         # Crear parámetros con temperatura inicial específica
-        params = HeatSimulationParameters(temperatura_inicial=temp_inicial)
+        params = HeatSimulationParameters(T_inicial=temp_inicial)
         
         simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular()
+        tiempos, temperaturas = simulator.simular(parar_en_100c=True)
         
         etiqueta = f"T₀ = {temp_inicial:.1f} °C"
         simulaciones.append((tiempos, temperaturas, etiqueta))
@@ -145,10 +144,10 @@ def ejecutar_tp4_temperaturas_ambiente():
     
     for i, temp_ambiente in enumerate(temps_ambiente):
         # Crear parámetros con temperatura ambiente específica
-        params = HeatSimulationParameters(temperatura_ambiente=temp_ambiente)
+        params = HeatSimulationParameters(T_amb=temp_ambiente)
         
         simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular()
+        tiempos, temperaturas = simulator.simular(parar_en_100c=True)
         
         etiqueta = f"T_amb = {temp_ambiente:.1f} °C"
         simulaciones.append((tiempos, temperaturas, etiqueta))
@@ -181,7 +180,7 @@ def ejecutar_tp4_tensiones_12v():
         params.actualizar_potencia_desde_tension(tension)
         
         simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular()
+        tiempos, temperaturas = simulator.simular(parar_en_100c=True)
         
         etiqueta = f"V = {tension:.1f} V (P = {params.potencia:.0f} W)"
         simulaciones.append((tiempos, temperaturas, etiqueta))
@@ -194,42 +193,6 @@ def ejecutar_tp4_tensiones_12v():
     fig = HeatPlotter.plot_family_curves(
         simulaciones, 
         "TP4.D - Familia de Curvas con Distribución Normal de Tensiones (12V)"
-    )
-    
-    return fig, simulaciones
-
-
-def ejecutar_tp4_tensiones_220v():
-    """4.E: Distribución normal de tensiones cercanas a 220V (μ=220, σ=4)."""
-    print("=== TP4.E - Distribución Normal de Tensiones (220V) ===")
-    print("Generando tensiones con distribución normal (μ=220V, σ=4V)...")
-    
-    # Generar tensiones con distribución normal
-    tensiones = ParameterDistribution.distribucion_normal_tension(n=5, media=220, std=4)
-    
-    simulaciones = []
-    print(f"{'Tensión (V)':<12} {'Potencia (W)':<12} {'Tiempo (min)':<12} {'Temp Final (°C)':<12}")
-    print("-" * 50)
-    
-    for i, tension in enumerate(tensiones):
-        # Crear parámetros con tensión específica
-        params = HeatSimulationParameters()
-        params.actualizar_potencia_desde_tension(tension)
-        
-        simulator = HeatSimulator(params)
-        tiempos, temperaturas = simulator.simular()
-        
-        etiqueta = f"V = {tension:.1f} V (P = {params.potencia:.0f} W)"
-        simulaciones.append((tiempos, temperaturas, etiqueta))
-        
-        tiempo_min = len(tiempos) * params.dt / 60  # Convertir a minutos
-        temp_final = temperaturas[-1]
-        print(f"{tension:<12.1f} {params.potencia:<12.0f} {tiempo_min:<12.2f} {temp_final:<12.2f}")
-    
-    print("\nGenerando gráfico de familias de curvas...")
-    fig = HeatPlotter.plot_family_curves(
-        simulaciones, 
-        "TP4.E - Familia de Curvas con Distribución Normal de Tensiones (220V)"
     )
     
     return fig, simulaciones
@@ -248,7 +211,6 @@ def mostrar_info_tp4():
     print("• TP4.B: Distribución normal de temperaturas iniciales (μ=10, σ=5)")
     print("• TP4.C: Distribución uniforme de temperaturas ambiente (-20 a 50°C)")
     print("• TP4.D: Distribución normal de tensiones 12V (μ=12, σ=4)")
-    print("• TP4.E: Distribución normal de tensiones 220V (μ=220, σ=4)")
     print()
     print("Propósito académico:")
     print("- Análisis de sensibilidad paramétrica")
@@ -268,11 +230,10 @@ if __name__ == "__main__":
     print("2. Distribución normal de temperaturas iniciales")
     print("3. Distribución uniforme de temperaturas ambiente")
     print("4. Distribución normal de tensiones (12V)")
-    print("5. Distribución normal de tensiones (220V)")
-    print("6. Información del TP4")
+    print("5. Información del TP4")
     
     try:
-        opcion = input("\nSeleccione una opción (1-6): ")
+        opcion = input("\nSeleccione una opción (1-5): ")
         
         if opcion == "1":
             ejecutar_tp4_resistencias()
@@ -283,8 +244,6 @@ if __name__ == "__main__":
         elif opcion == "4":
             ejecutar_tp4_tensiones_12v()
         elif opcion == "5":
-            ejecutar_tp4_tensiones_220v()
-        elif opcion == "6":
             mostrar_info_tp4()
         else:
             print("Opción no válida.")

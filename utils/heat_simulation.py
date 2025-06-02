@@ -48,21 +48,34 @@ class HeatSimulationParameters:
         R_acero = self.espesor_acero / self.k_acero
         R_poliuretano = self.espesor_poliuretano / self.k_poliuretano
         R_total = R_acero + R_poliuretano
-        self.U = 1 / R_total
+        
+        # Para simulaciones sin pérdidas, U debe ser cero o muy pequeño
+        if self.k_acero >= 1e6 or self.k_poliuretano >= 1e6:
+            self.U = 0.0  # Sin pérdidas térmicas
+        else:
+            self.U = 1 / R_total
         
         # Geometría del cilindro
         self.area_lateral = 2 * np.pi * self.radio * self.altura
         self.area_superior = np.pi * self.radio**2
         self.area_total = self.area_lateral + self.area_superior
-        
-        # Potencia basada en tensión y resistencia (si se especifica)
-        if hasattr(self, 'usar_tension_resistencia') and self.usar_tension_resistencia:
-            self.potencia = self.tension**2 / self.resistencia
     
     def actualizar_potencia_desde_tension(self, tension: float):
         """Actualiza la potencia basada en la tensión y resistencia."""
         self.tension = tension
         self.potencia = self.tension**2 / self.resistencia
+
+    def calcular_temp_equilibrio(self) -> float:
+        """
+        Calcula la temperatura de equilibrio cuando las pérdidas igualan la potencia.
+        T_equilibrio = T_amb + P / (U * A)
+        """
+        if self.U == 0 or self.area_total == 0:
+            return 100.0  # Sin pérdidas, alcanza 100°C
+        
+        coef_perdidas = self.U * self.area_total
+        temp_equilibrio = self.T_amb + (self.potencia / coef_perdidas)
+        return temp_equilibrio
 
 
 class HeatSimulator:
@@ -74,22 +87,23 @@ class HeatSimulator:
     
     def reset(self):
         """Reinicia la simulación."""
-        self.tiempos = [0]
+        self.tiempos = [0.0]
         self.temperaturas = [self.params.T_inicial]
         self.T_actual = self.params.T_inicial
         self.tiempo_actual = 0
         self.eventos_estocasticos = []  # Para TP5
     
-    def simular(self, evento_estocastico: Optional[Dict] = None) -> Tuple[List[float], List[float]]:
+    def simular(self, evento_estocastico: Optional[Dict] = None, parar_en_100c: bool = True) -> Tuple[List[float], List[float]]:
         """
         Ejecuta la simulación completa.
         
         Args:
             evento_estocastico: Diccionario con parámetros para eventos estocásticos (TP5)
                 - probabilidad: float (ej: 1/300)
-                - descenso_max: float (ej: 50)
+                - descenso_max: float (ej: 5) - máximo descenso en grados
                 - duracion_min: int (segundos mínimos)
                 - duracion_max: int (segundos máximos)
+            parar_en_100c: Si True, para la simulación al alcanzar 100°C
         
         Returns:
             Tupla (tiempos, temperaturas)
@@ -97,24 +111,25 @@ class HeatSimulator:
         self.reset()
         
         evento_activo = False
-        evento_descenso = 0
+        evento_descenso_total = 0
         evento_tiempo_restante = 0
         
-        for t in range(1, self.params.tiempo_total + 1):
+        # Tiempo de simulación hasta alcanzar 100°C o tiempo máximo
+        tiempo_limite = self.params.tiempo_total
+        
+        for t in range(1, tiempo_limite + 1):
             self.tiempo_actual = t
             
             # TP5: Verificar eventos estocásticos
             if evento_estocastico and not evento_activo:
                 if np.random.random() < evento_estocastico['probabilidad']:
                     evento_activo = True
-                    evento_descenso = np.random.uniform(0, evento_estocastico['descenso_max'])
-                    evento_tiempo_restante = np.random.randint(
-                        evento_estocastico['duracion_min'], 
-                        evento_estocastico['duracion_max'] + 1
-                    )
+                    # Descenso más realista (1-3 grados máximo para ser más suave)
+                    evento_descenso_total = np.random.uniform(1.0, 3.0)
+                    evento_tiempo_restante = np.random.randint(60, 180)  # 1-3 minutos de duración
                     self.eventos_estocasticos.append({
                         'tiempo': t,
-                        'descenso': evento_descenso,
+                        'descenso': evento_descenso_total,
                         'duracion': evento_tiempo_restante
                     })
             
@@ -122,28 +137,37 @@ class HeatSimulator:
             perdida = self.params.U * self.params.area_total * (self.T_actual - self.params.T_amb)
             energia_neta = self.params.potencia - perdida
             
+            # La energía neta siempre debe ser positiva para calentar
             if energia_neta < 0:
                 energia_neta = 0
             
-            # Aplicar cambio de temperatura
+            # Aplicar cambio de temperatura normal
             dT = (energia_neta * self.params.dt) / (self.params.masa * self.params.calor_especifico)
             self.T_actual += dT
             
             # TP5: Aplicar evento estocástico si está activo
-            if evento_activo:
-                # Aplicar descenso temporal
-                descenso_por_segundo = evento_descenso / evento_tiempo_restante
-                self.T_actual -= descenso_por_segundo
+            if evento_activo and evento_tiempo_restante > 0:
+                # Aplicar descenso gradual durante la duración del evento
+                descenso_instantaneo = evento_descenso_total / evento_tiempo_restante
+                
+                # Evitar que la temperatura baje de 10°C para ser realista
+                nueva_temperatura = self.T_actual - descenso_instantaneo
+                if nueva_temperatura >= 10.0:
+                    self.T_actual = nueva_temperatura
+                else:
+                    self.T_actual = 10.0
+                    
                 evento_tiempo_restante -= 1
                 
                 if evento_tiempo_restante <= 0:
                     evento_activo = False
             
-            self.tiempos.append(t)
+            self.tiempos.append(float(t))
             self.temperaturas.append(self.T_actual)
             
-            if self.T_actual >= 100:
-                break  # Alcanzamos 100°C
+            # Parar al alcanzar 100°C si está habilitado
+            if parar_en_100c and self.T_actual >= 100.0:
+                break
         
         return self.tiempos, self.temperaturas
 
@@ -156,7 +180,7 @@ class HeatPlotter:
                              titulo: str = "Curva de Temperatura", 
                              etiqueta: str = "Temperatura del agua",
                              color: str = 'blue',
-                             linestyle: str = '-') -> plt.Figure:
+                             linestyle: str = '-'):
         """Grafica una única simulación."""
         fig = plt.figure(figsize=(10, 6))
         
@@ -177,12 +201,13 @@ class HeatPlotter:
     @staticmethod
     def plot_family_curves(simulaciones: List[Tuple[List[float], List[float], str]], 
                           titulo: str = "Familia de Curvas de Temperatura",
-                          colores: Optional[List[str]] = None) -> plt.Figure:
+                          colores: Optional[List[str]] = None):
         """Grafica múltiples simulaciones en el mismo gráfico."""
         fig = plt.figure(figsize=(12, 8))
         
         if colores is None:
-            colores = plt.cm.tab10(np.linspace(0, 1, len(simulaciones)))
+            # Usar colores predefinidos en lugar de plt.cm.tab10
+            colores = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
         
         max_tiempo_min = 0
         

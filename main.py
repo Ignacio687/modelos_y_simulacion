@@ -22,24 +22,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict, List, Callable
 
-# Agregar paths para importar módulos
-sys.path.append(os.path.join(os.path.dirname(__file__), 'tps'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
-
 # Importar módulos del proyecto
-from tp1_diseño import ejecutar_tp1
-from tp2_perdidas import ejecutar_tp2
-from tp2_hielo import ejecutar_tp2_hielo
-from tp3_graficos import ejecutar_tp3, ejecutar_comparacion_completa
-from tp4_familias import (
-    ejecutar_tp4_resistencias, ejecutar_tp4_temperaturas_iniciales,
-    ejecutar_tp4_temperaturas_ambiente, ejecutar_tp4_tensiones_12v,
-    ejecutar_tp4_tensiones_220v, mostrar_info_tp4
-)
-from tp5_estocasticos import (
-    ejecutar_tp5_evento_basico, ejecutar_tp5_multiples_simulaciones,
-    ejecutar_tp5_tp4_con_eventos
-)
+from tps import tp1_diseño, tp2_perdidas, tp2_hielo, tp3_graficos, tp4_familias, tp5_estocasticos
 
 
 class MenuPrincipal:
@@ -50,40 +34,38 @@ class MenuPrincipal:
             "1": {
                 "titulo": "TP 1 - Diseño de Parámetros del Calentador",
                 "opciones": {
-                    "1": ("Ejecutar TP1 completo", ejecutar_tp1),
+                    "1": ("Ejecutar TP1 completo", tp1_diseño.ejecutar_tp1),
                 }
             },
             "2": {
                 "titulo": "TP 2 - Cálculo de Pérdidas Térmicas",
                 "opciones": {
-                    "1": ("Ejecutar TP2 - Cálculo de pérdidas", ejecutar_tp2),
-                    "2": ("EXTRA - Simulación con hielo", ejecutar_tp2_hielo),
+                    "1": ("Ejecutar TP2 - Cálculo de pérdidas", tp2_perdidas.ejecutar_tp2),
+                    "2": ("EXTRA - Simulación con hielo", tp2_hielo.ejecutar_tp2_hielo),
                 }
             },
             "3": {
                 "titulo": "TP 3 - Gráficos de Temperatura",
                 "opciones": {
-                    "1": ("Ejecutar TP3 - Gráficos básicos", ejecutar_tp3),
-                    "2": ("Comparación completa de gráficos", ejecutar_comparacion_completa),
+                    "1": ("Ejecutar TP3 - Gráficos básicos", tp3_graficos.ejecutar_tp3),
+                    "2": ("Comparación completa de gráficos", tp3_graficos.ejecutar_comparacion_completa),
                 }
             },
             "4": {
                 "titulo": "TP 4 - Familias de Curvas con Distribuciones",
                 "opciones": {
-                    "1": ("4.A - Distribución uniforme de resistencias", ejecutar_tp4_resistencias),
-                    "2": ("4.B - Distribución normal de temperaturas iniciales", ejecutar_tp4_temperaturas_iniciales),
-                    "3": ("4.C - Distribución uniforme de temperaturas ambiente", ejecutar_tp4_temperaturas_ambiente),
-                    "4": ("4.D - Distribución normal de tensiones (12V)", ejecutar_tp4_tensiones_12v),
-                    "5": ("4.E - Distribución normal de tensiones (220V)", ejecutar_tp4_tensiones_220v),
-                    "6": ("4.F - Información del TP4", mostrar_info_tp4),
+                    "1": ("4.A - Distribución uniforme de resistencias", tp4_familias.ejecutar_tp4_resistencias),
+                    "2": ("4.B - Distribución normal de temperaturas iniciales", tp4_familias.ejecutar_tp4_temperaturas_iniciales),
+                    "3": ("4.C - Distribución uniforme de temperaturas ambiente", tp4_familias.ejecutar_tp4_temperaturas_ambiente),
+                    "4": ("4.D - Distribución normal de tensiones (12V)", tp4_familias.ejecutar_tp4_tensiones_12v),
+                    "5": ("4.E - Información del TP4", tp4_familias.mostrar_info_tp4),
                 }
             },
             "5": {
                 "titulo": "TP 5 - Eventos Estocásticos",
                 "opciones": {
-                    "1": ("5.1 - Simulación básica con eventos estocásticos", ejecutar_tp5_evento_basico),
-                    "2": ("5.2 - Múltiples simulaciones estocásticas", ejecutar_tp5_multiples_simulaciones),
-                    "3": ("5.3 - Familias del TP4 con eventos estocásticos", ejecutar_tp5_tp4_con_eventos),
+                    "1": ("5.1 - Simulación básica con eventos estocásticos", tp5_estocasticos.ejecutar_tp5_evento_basico),
+                    "2": ("5.2 - Múltiples simulaciones estocásticas", tp5_estocasticos.ejecutar_tp5_multiples_simulaciones),
                 }
             }
         }

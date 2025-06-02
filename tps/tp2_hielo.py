@@ -9,13 +9,8 @@ Este módulo simula el calentamiento de agua con pérdidas térmicas y la adici�
 Incluye la física del derretimiento del hielo y la transferencia de calor entre agua y hielo.
 """
 
-import sys
-import os
 import numpy as np
 import matplotlib.pyplot as plt
-
-# Agregar path para importar utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Constantes
 masa = 1.0  # kg de agua
@@ -203,7 +198,7 @@ def ejecutar_tp2_hielo():
     plt.axhline(100, color='r', linestyle='--', linewidth=2, label="100°C (ebullición)")
     plt.axvline(2, color='orange', linestyle=':', alpha=0.7, label="Adición de hielo (2 min)")
     
-    plt.title('🧊 Curva de Temperatura con Pérdidas de Calor y Hielo', fontsize=14, fontweight='bold')
+    plt.title('Curva de Temperatura con Pérdidas de Calor y Hielo', fontsize=14, fontweight='bold')
     plt.xlabel('Tiempo (min)', fontsize=12)
     plt.ylabel('Temperatura (°C)', fontsize=12)
     plt.grid(True, alpha=0.3)
